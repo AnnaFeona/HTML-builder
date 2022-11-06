@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require('fs/promises');
 const path = require('path');
 
 const folder = path.join(__dirname, 'files');
@@ -6,33 +6,25 @@ const newFolder = path.join(__dirname, 'files-copy');
 
 copyDir (folder, newFolder);
 
-function copyDir (folder, newFolder) {
-  // fs.rmdir(newFolder);
-  fs.mkdir(newFolder, {recursive: true}, (err) => {
-    if (err) {
-      console.log(err.message);
-    }
+async function copyDir(folder, newFolder) {
+  await fs.mkdir(newFolder, {recursive: true});
 
-    console.log('Directory created successfully!');
-    fs.readdir(folder, {withFileTypes: true}, (err, items) => {
-      if (err) {
-        console.log(err.message);
-      }
-      items.forEach(item => {
-        if (item.isDirectory()) {
-          copyDir(path.join(folder, item.name), path.join(newFolder, item.name));
-        } else {
-          fs.copyFile(path.join(folder, item.name), path.join(newFolder,  item.name), (err) => {
-            if (err) {
-              console.log(err.message);
-            }
-            // if (!item.isDirectory()) {
-            //   console.log('File ' + item.name + ' copied.');
-            // }
-          })
-        }
-      })
-    })
-  })
-  // console.log('Files have been copied sucsessfully!')
+  const files = await fs.readdir(folder, {withFileTypes: true});
+  const newFiles = await fs.readdir(newFolder, {withFileTypes: true});
+
+  if (newFiles.length) {
+    await Promise.all(newFiles.map(item => {
+      return fs.rm(path.join(newFolder, item.name), {recursive: true});
+    }));
+  }
+
+  await Promise.all(files.map(item => {
+    if (item.isDirectory()) {
+      return copyDir(path.join(folder, item.name), path.join(newFolder, item.name));
+    } else {
+      return fs.copyFile(path.join(folder, item.name), path.join(newFolder,  item.name));
+    }
+  }))
+  console.log('Folder have been sucsessfully copied.')
 }
+exports.copyDir = copyDir;
