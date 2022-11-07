@@ -9,10 +9,8 @@ mergeCSS(folder, newFolder, 'bundle.css');
 async function mergeCSS(folder, newFolder, fileName) {
   const files = await fs.readdir(folder, {withFileTypes: true});
   const cssFiles = files.filter(item => path.extname(item.name) === '.css' && !item.isDirectory());
-  console.log(cssFiles);
 
   const content = await Promise.all(cssFiles.map(item => fs.readFile(path.join(folder, item.name))));
-  // console.log(content.toString());
 
   await fs.writeFile(path.join(newFolder, fileName), content.join(`\n`));
 }
